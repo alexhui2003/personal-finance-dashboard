@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+
+        .file-label:hover {
+            background: #5568d3;
+        }
+
+        .upload-btn, .clear-btn {
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .upload-btn:hover {
+            background: #059669;
+        }
+
+        .clear-btn {
+            background: #ef4444;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .suggestions-list {
+            list-style: none;
+        }
+
+        .suggestion-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .suggestion-item.header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-left: none;
+            font-weight: bold;
+        }
+
+        .suggestion-item.header h3 {
+            color: white;
+        }
+
+        .suggestion-item.divider {
+            background: transparent;
+            border: none;
+            padding: 5px 15px;
+            margin: 15px 0 5px 0;
+        }
+
+        .suggestion-item.divider h3 {
+            color: #999;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .suggestion-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+            text-transform: capitalize;
+        }
+
+        .suggestion-detail {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .badge.on_track {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge.info {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .transactions-table th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .transactions-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #666;
+        }
+
+        .transactions-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .amount-positive {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .amount-negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e0e7ff;
+            color: #3730a3;
+            border-radius: 12px;
+            font-size: 12px;
+            text-transform: capitalize;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .filename {
+            display: inline-block;
+            margin-left: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Personal Finance Dashboard</h1>
+            <p class="subtitle">Upload your transactions and get instant insights into your spending</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".csv">
+                <label for="fileInput" class="file-label">Choose CSV File</label>
+                <span class="filename" id="filename"></span>
+            </div>
+            <button class="upload-btn" onclick="uploadFile()">Upload & Analyze</button>
+            <button class="clear-btn" onclick="clearData()">Clear All Data</button>
+            <div class="status" id="status"></div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2>📊 Spending by Category</h2>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📈 Monthly Spending Trend</h2>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💡 Budget Suggestions</h2>
+                <ul class="suggestions-list" id="suggestions"></ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Recent Transactions</h2>
+            <div id="transactionsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let categoryChart, monthlyChart;
+
+        // File selection display
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const filename = e.target.files[0]?.name || '';
+            document.getElementById('filename').textContent = filename;
+        });
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Please select a file first', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showStatus('Uploading...', 'success');
+                
+                const response = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus(data.message, 'success');
+                    loadDashboard();
+                    fileInput.value = '';
+                    document.getElementById('filename').textContent = '';
+                } else {
+                    showStatus(data.detail || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Error connecting to server. Make sure the API is running.', 'error');
+                console.error(error);
+            }
+        }
+
+        async function clearData() {
+            if (!confirm('Are you sure you want to clear all transactions?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/transactions`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                showStatus(data.message, 'success');
+                loadDashboard();
+            } catch (error) {
+                showStatus('Error clearing data', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        async function loadDashboard() {
+            await Promise.all([
+                loadCategoryChart(),
+                loadMonthlyChart(),
+                loadSuggestions(),
+                loadTransactions()
+            ]);
+        }
+
+        async function loadCategoryChart() {
+            try {
+                const response = await fetch(`${API_URL}/spending-by-category`);
+                const data = await response.json();
+
+                const categories = data.map(item => item.category);
+                const amounts = data.map(item => Math.abs(item.total));
+
+                const ctx = document.getElementById('categoryChart');
+                
+                if (categoryChart) {
+                    categoryChart.destroy();
+                }
+
+                categoryChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories,
+                        datasets: [{
+                            data: amounts,
+                            backgroundColor: [
+                                '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                                '#43e97b', '#fa709a', '#fee140', '#30cfd0'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading category chart:', error);
+            }
+        }
+
+        async function loadMonthlyChart() {
+            try {
+                const response = await fetch(`${API_URL}/monthly-spending`);
+                const data = await response.json();
+
+                const monthlyTotals = {};
+                data.forEach(item => {
+                    if (!monthlyTotals[item.month]) {
+                        monthlyTotals[item.month] = 0;
+                    }
+                    monthlyTotals[item.month] += Math.abs(item.total);
+                });
+
+                const months = Object.keys(monthlyTotals).sort();
+                const amounts = months.map(month => monthlyTotals[month]);
+
+                const ctx = document.getElementById('monthlyChart');
+                
+                if (monthlyChart) {
+                    monthlyChart.destroy();
+                }
+
+                monthlyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Total Spending',
+                            data: amounts,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => '$' + value.toFixed(0)
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading monthly chart:', error);
+            }
+        }
+
+        async function loadSuggestions() {
+            try {
+                const response = await fetch(`${API_URL}/budget-suggestions`);
+                const data = await response.json();
+
+                const container = document.getElementById('suggestions');
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<p class="loading">Upload transactions to see budget suggestions</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(item => {
+                    // Handle divider
+                    if (item.status === 'info' && item.current_spending === 0) {
+                        return `<li class="suggestion-item divider"><h3>${item.category}</h3></li>`;
+                    }
+                    
+                    // Handle income header
+                    if (item.category.includes('Income')) {
+                        return `
+                            <li class="suggestion-item header">
+                                <h3>${item.category}</h3>
+                                <div class="suggestion-detail">${item.current_spending.toFixed(2)}/month</div>
+                            </li>
+                        `;
+                    }
+                    
+                    const diffColor = item.difference >= 0 ? '#10b981' : '#ef4444';
+                    const diffSign = item.difference >= 0 ? '+' : '';
+                    
+                    return `
+                        <li class="suggestion-item">
+                            <h3>${item.category}</h3>
+                            <div class="suggestion-detail">Current: ${item.current_spending.toFixed(2)}/month ${item.percentage ? `(${item.percentage})` : ''}</div>
+                            <div class="suggestion-detail">Target: ${item.suggested_budget.toFixed(2)}/month</div>
+                            ${item.difference !== 0 ? `<div class="suggestion-detail" style="color: ${diffColor}; font-weight: 600;">${diffSign}${Math.abs(item.difference).toFixed(2)} ${item.difference >= 0 ? 'under budget' : 'over budget'}</div>` : ''}
+                            <span class="badge ${item.status}">${item.status.replace('_', ' ')}</span>
+                        </li>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const response = await fetch(`${API_URL}/transactions?limit=20`);
+                const data = await response.json();
+
+                const container = document.getElementById('transactionsContainer');
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<p class="loading">No transactions yet. Upload a CSV to get started!</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(t => `
+                                <tr>
+                                    <td>${new Date(t.date).toLocaleDateString()}</td>
+                                    <td>${t.description}</td>
+                                    <td><span class="category-tag">${t.category}</span></td>
+                                    <td class="${t.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
+                                        $${Math.abs(t.amount).toFixed(2)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+    </script>
+</body>
+</html>
