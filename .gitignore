@@ -54,9 +54,3 @@ htmlcov/
 build/
 dist/
 *.egg-info/
-
-# CSV files with real data (keep sample_transactions.csv)
-# Uncomment if you want to exclude all CSVs:
-# *.csv
-# But keep your sample:
-# !sample_transactions.csv
